@@ -1,33 +1,41 @@
 import express from "express";
-import * as config from "../config";
 import cors from "cors";
-import * as tools from "../tools";
-import axios from "axios";
+import pkg from "pg";
+
+const { Pool } = pkg;
+
+const dbConfig = {
+	host: "127.0.0.1",
+	database: "southwind",
+	user: "apiuser",
+	password: "Dci1234!",
+	port: 5432,
+};
+
+const pool = new Pool(dbConfig);
 
 interface IEmployee {
 	first_name: string;
 	last_name: string;
 	age: number;
 }
-
 const app = express();
 app.use(cors());
 const port = 4882;
 
 app.get("/employees", (_req, res) => {
-	const employees: IEmployee[] = [
-		{
-			first_name: "first1",
-			last_name: "last1",
-			age: 11,
-		},
-		{
-			first_name: "first2",
-			last_name: "last2",
-			age: 22,
-		},
-	];
-	res.json(employees);
+	const queryText = "SELECT * FROM employees";
+
+	pool.query(queryText, (err: unknown, result: any) => {
+		if (err) {
+			pool.end();
+			throw err;
+		} else {
+			const employees: IEmployee[] = result.rows;
+			res.json(employees);
+			pool.end();
+		}
+	});
 });
 
 app.listen(port, () => {
